@@ -6,13 +6,22 @@ export class User {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column()
+    @Column({ nullable: false, unique: true })
+    email: string
+
+    @Column({ nullable: false })
+    password: string
+
+    @Column({ nullable: false })
     firstName: string
 
-    @Column()
+    @Column({ nullable: false })
     lastName: string
 
-    @Column()
-    age: number
+    @Column({ nullable: false })
+    birthDate: Date
+
+    @Column({ nullable: false, unique: true })
+    cpf: string
 
 }

@@ -1,6 +1,5 @@
 import express, { json, urlencoded } from "express";
 import router from "./routes/router";
-import "./database/db";
 
 const app = express()
 
