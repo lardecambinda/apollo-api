@@ -30,15 +30,5 @@ export default {
 
     return response.json({ users, token })
 
-  },
-
-  async index(request: Request, response: Response) {
-
-    const user = await UserRepository
-      .createQueryBuilder("user")
-      .getOne()
-
-    return response.json({ user })
-
   }
 }
