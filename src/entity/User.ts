@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, ManyToOne } from "typeorm"
 
 import bcrypt from 'bcrypt'
+import { Address } from "./Address"
 
 @Entity()
 export class User {
@@ -31,4 +32,6 @@ export class User {
     hashPassword() {
         this.password = bcrypt.hashSync(this.password, 10)
     }
+
+    @ManyToOne(() => Address, address => address.id) address: Address
 }
