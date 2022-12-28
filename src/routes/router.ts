@@ -1,16 +1,13 @@
 import { Router } from "express";
-import Register from "../controller/RegisterController";
-import Authentication from "../controller/AuthenticationController";
-import UserController from "../controller/UserController";
+import UserRouter from "./User";
+import RegisterRouter from "./Register";
+import AuthenticationRouter from "./Authentication";
 
 
 const router = Router()
 
-//Registration
-router.post('/register', Register.store)
-//Authentication
-router.post('/auth', Authentication.authentication)
-//Return Users
-router.get('/user', UserController.index)
+router.use(UserRouter)
+router.use(RegisterRouter)
+router.use(AuthenticationRouter)
 
 export default router
