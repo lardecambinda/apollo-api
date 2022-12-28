@@ -1,15 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate } from "typeorm"
+
+import bcrypt from 'bcrypt'
 
 @Entity()
 export class User {
 
-    @PrimaryGeneratedColumn()
-    id: number
+    @PrimaryGeneratedColumn("uuid")
+    id: string
 
     @Column({ nullable: false, unique: true })
     email: string
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, select: false })
     password: string
 
     @Column({ nullable: false })
@@ -19,9 +21,14 @@ export class User {
     lastName: string
 
     @Column({ nullable: false })
-    birthDate: Date
+    birthDate: string
 
     @Column({ nullable: false, unique: true })
     cpf: string
 
+    @BeforeInsert()
+    @BeforeUpdate()
+    hashPassword() {
+        this.password = bcrypt.hashSync(this.password, 10)
+    }
 }
