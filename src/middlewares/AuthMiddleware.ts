@@ -1,6 +1,12 @@
 import jwt from 'jsonwebtoken';
 import { Response, Request, NextFunction } from 'express';
 
+interface ITokenAuthorization {
+  id: string,
+  iat: number,
+  exp: number
+}
+
 export default {
   async authMiddleware(request: Request, response: Response, next: NextFunction) {
     const { authorization } = request.headers
@@ -11,7 +17,10 @@ export default {
 
     try {
       const data = jwt.verify(token, 'secret')
-      console.log(data)
+      const { id } = data as ITokenAuthorization
+
+      response.status(200).json({ userId: id })
+
     } catch {
       response.status(401).json({ error: 'Token malformatted' })
     }
