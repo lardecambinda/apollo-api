@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, Man
 
 import bcrypt from 'bcrypt'
 import { Address } from "./Address"
+import { Products } from "./Products"
 
 @Entity()
 export class User {
@@ -27,6 +28,9 @@ export class User {
     @Column({ nullable: false, unique: true })
     cpf: string
 
+    @Column({ nullable: true })
+    role: boolean;
+
     @BeforeInsert()
     @BeforeUpdate()
     hashPassword() {
@@ -36,4 +40,7 @@ export class User {
     @OneToOne(() => Address, { cascade: true, eager: true, nullable: false })
     @JoinColumn()
     address: Address;
+
+    @ManyToOne(() => Products, products => products.user)
+    products: [Products];
 }

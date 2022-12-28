@@ -11,5 +11,8 @@ export default {
 
     return response.json(user)
 
+  },
+  async editUser(request: Request, response: Response) {
+
   }
 } 
