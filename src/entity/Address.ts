@@ -8,7 +8,7 @@ export class Address {
   id: string
 
   @Column({ nullable: false })
-  cpe: string
+  zipCode: number
 
   @Column({ nullable: false })
   street: string
@@ -18,7 +18,4 @@ export class Address {
 
   @Column({ nullable: false })
   number: number
-
-  @ManyToOne(() => User, user => user.id) user: User
-
 }

@@ -19,7 +19,9 @@ export default {
       const data = jwt.verify(token, 'secret')
       const { id } = data as ITokenAuthorization
 
-      response.status(200).json({ userId: id })
+      request.userId = id
+
+      return next()
 
     } catch {
       response.status(401).json({ error: 'Token malformatted' })

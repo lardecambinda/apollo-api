@@ -7,7 +7,7 @@ import bcrypt from 'bcrypt'
 const UserRepository = connectDB.getRepository(User)
 
 export default {
-  async index(request: Request, response: Response) {
+  async authentication(request: Request, response: Response) {
     const { email, password }: User = request.body
 
     const user = await UserRepository.findOne({ where: { email } })
@@ -26,7 +26,19 @@ export default {
 
     const token = jwt.sign({ id: user.id }, 'secret', { expiresIn: '1d' })
 
-    return response.json({ user, token })
+    const users = await UserRepository.findOne({ where: { email } })
+
+    return response.json({ users, token })
+
+  },
+
+  async index(request: Request, response: Response) {
+
+    const user = await UserRepository
+      .createQueryBuilder("user")
+      .getOne()
+
+    return response.json({ user })
 
   }
 }
