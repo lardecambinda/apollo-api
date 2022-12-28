@@ -6,20 +6,22 @@ const UserRepository = connectDB.getRepository(User)
 
 export default {
   async store(request: Request, response: Response) {
-    const { email, cpf } = request.body
+    const user: User = request.body
 
-    const emailExists = await UserRepository.findOne({ where: { email } })
-    const cpfExists = await UserRepository.findOne({ where: { cpf } })
+    const emailExists = await UserRepository.findOne({ where: { email: user.email } })
+    const cpfExists = await UserRepository.findOne({ where: { cpf: user.cpf } })
 
-    if (emailExists) return response.json({ error: `The name ${emailExists.email} already exists` })
-    if (cpfExists) return response.json({ error: `The CPF ${cpfExists.cpf} already exists` })
+    if (!user.address.complement || !user.address.number || !user.address.street || !user.address.zipCode)
+      return response.json({ error: 'The all fields of address are required' })
+    if (emailExists)
+      return response.json({ error: `The name ${user.email} already exists` })
+    if (cpfExists)
+      return response.json({ error: `The CPF ${user.cpf} already exists` })
 
     const createUser = UserRepository.create(request.body)
     await UserRepository.save(createUser)
 
-    const userWithOutPassword = await UserRepository.findOneBy({ cpf })
-
-    return response.json(userWithOutPassword)
+    return response.json(user)
 
   }
 }

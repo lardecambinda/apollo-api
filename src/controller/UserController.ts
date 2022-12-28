@@ -9,8 +9,6 @@ export default {
 
     const user = await UserRepository.find()
 
-    console.log(user)
-
     return response.json(user)
 
   }

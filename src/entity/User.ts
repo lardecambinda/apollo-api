@@ -33,7 +33,7 @@ export class User {
         this.password = bcrypt.hashSync(this.password, 10)
     }
 
-    @OneToOne(() => Address, { cascade: true, eager: true })
+    @OneToOne(() => Address, { cascade: true, eager: true, nullable: false })
     @JoinColumn()
     address: Address;
 }
