@@ -24,11 +24,11 @@ export default {
 
     if (!passwordIsValid) return response.status(401).json({ error: 'Password is wrong' })
 
-    const token = jwt.sign({ id: user.id }, 'secret', { expiresIn: '1d' })
+    const token = jwt.sign({ id: user.id, role: user.role }, 'secret', { expiresIn: '1d' })
 
-    const users = await UserRepository.findOne({ where: { email } })
+    const userCreated = await UserRepository.findOne({ where: { email } })
 
-    return response.json({ users, token })
+    return response.json({ userCreated, token })
 
   }
 }

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, ManyToOne, OneToOne, JoinColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, ManyToOne, OneToOne, JoinColumn, OneToMany } from "typeorm"
 
 import bcrypt from 'bcrypt'
 import { Address } from "./Address"
@@ -41,6 +41,7 @@ export class User {
     @JoinColumn()
     address: Address;
 
-    @ManyToOne(() => Products, products => products.user)
+    @OneToMany(() => Products, products => products, {})
+    @JoinColumn()
     products: [Products];
 }

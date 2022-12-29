@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn, JoinTable } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn, JoinTable, ManyToOne } from "typeorm";
 import { User } from "./User";
 
 @Entity()
@@ -17,7 +17,7 @@ export class Products {
   price: number
 
   @Column()
-  size: number
+  size: string
 
   @Column('text', { array: true })
   colors: string[]
@@ -28,7 +28,7 @@ export class Products {
   @Column('text', { array: true })
   images: string[]
 
-  @OneToMany(() => User, user => user.products)
-  @JoinColumn()
-  user: [User]
+  @ManyToOne(() => User, product => product, { eager: true, nullable: false })
+  @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
+  user: User
 }
