@@ -18,7 +18,7 @@ export default {
     if (cpfExists)
       return response.json({ error: `The CPF ${user.cpf} already exists` })
 
-    if (user.role === true) return response.json({ error: `Only admin users can create or pass user to elevate acesse` })
+    // if (user.role === true) return response.json({ error: `Only admin users can create or pass user to elevate acesse` })
 
     const createUser = UserRepository.create(request.body)
     await UserRepository.save(createUser)

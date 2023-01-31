@@ -17,7 +17,6 @@ export default {
     await UserRepository.save(products)
 
     const product = await UserRepository.find()
-
     return response.json(product).status(200)
   }
 } 
