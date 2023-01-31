@@ -3,18 +3,10 @@ import { DataSource } from "typeorm";
 const connectDB = new DataSource({
 
   type: "postgres",
-  url: "postgres://xfetmhya:2Tl8aVo4SVbt10He58cY0VaHAUb5pbOx@motty.db.elephantsql.com/xfetmhya",
+  url: "postgres://ryumbijn:O8SCmPaDN3p_oEnp_eYWnIiRzZz6xsYP@35.198.51.18:5432/ryumbijn",
   logging: true,
   synchronize: true,
   entities: ["./src/entity/**/*.ts"],
-  cli: {
-    entitiesDir: "src/entity"
-  },
-  extra: {
-    ssl: {
-      rejectUnauthorized: false
-    }
-  }
 })
 
 connectDB

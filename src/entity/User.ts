@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, ManyToOne, OneToOne, JoinColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, ManyToOne, OneToOne, JoinColumn, OneToMany } from "typeorm"
 
 import bcrypt from 'bcrypt'
 import { Address } from "./Address"
@@ -31,16 +31,11 @@ export class User {
     @Column({ nullable: true })
     role: boolean;
 
-    @BeforeInsert()
-    @BeforeUpdate()
-    hashPassword() {
-        this.password = bcrypt.hashSync(this.password, 10)
-    }
-
-    @OneToOne(() => Address, { cascade: true, eager: true, nullable: false })
+    @OneToOne(() => Address, { cascade: true, eager: true, })
     @JoinColumn()
     address: Address;
 
-    @ManyToOne(() => Products, products => products.user)
-    products: [Products];
+    @OneToOne(() => User, user => user.id, { cascade: true, eager: true })
+    @JoinColumn()
+    products: Products;
 }

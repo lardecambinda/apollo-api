@@ -3,6 +3,7 @@ import { Response, Request, NextFunction } from 'express';
 
 interface ITokenAuthorization {
   id: string,
+  role: boolean,
   iat: number,
   exp: number
 }
@@ -17,11 +18,16 @@ export default {
 
     try {
       const data = jwt.verify(token, 'secret')
-      const { id } = data as ITokenAuthorization
+      const { id, role } = data as ITokenAuthorization
 
       request.userId = id
+      request.role = role
 
-      return next()
+      console.log(request.role)
+
+      if (request.role) return next()
+
+      return response.status(401).json({ error: 'User not authorized' })
 
     } catch {
       response.status(401).json({ error: 'Token malformatted' })
