@@ -1,8 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, ManyToOne, OneToOne, JoinColumn, OneToMany } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate } from "typeorm"
 
 import bcrypt from 'bcrypt'
-import { Address } from "./Address"
-import { Products } from "./Products"
 
 @Entity()
 export class User {
@@ -19,23 +17,14 @@ export class User {
     @Column({ nullable: false })
     firstName: string
 
-    @Column({ nullable: false })
-    lastName: string
-
-    @Column({ nullable: false })
-    birthDate: string
-
-    @Column({ nullable: false, unique: true })
-    cpf: string
-
     @Column({ nullable: true })
     role: boolean;
 
-    @OneToOne(() => Address, { cascade: true, eager: true, })
-    @JoinColumn()
-    address: Address;
+    @BeforeInsert()
+    @BeforeUpdate()
+    async hashPasswd() {
+        const hash = await bcrypt.hash(this.password, 10)
+        this.password = hash
+    }
 
-    @OneToOne(() => User, user => user.id, { cascade: true, eager: true })
-    @JoinColumn()
-    products: Products;
 }
