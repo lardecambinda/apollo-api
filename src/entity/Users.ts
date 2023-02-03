@@ -1,9 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate } from "typeorm"
+import { Posts } from './Posts';
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, OneToMany } from "typeorm"
 
 import bcrypt from 'bcrypt'
 
 @Entity()
-export class User {
+export class Users {
 
     @PrimaryGeneratedColumn("uuid")
     id: string
@@ -19,6 +20,14 @@ export class User {
 
     @Column({ nullable: true })
     role: boolean;
+
+    @Column('text', { array: true, nullable: true })
+    @OneToMany(() => Posts, (post) => post.user, {
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+        eager: true,
+    })
+    posts: Array<Posts>
 
     @BeforeInsert()
     @BeforeUpdate()

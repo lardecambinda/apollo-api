@@ -1,12 +1,12 @@
-import { Request, Response } from "express";
-import { User } from "../entity/User";
+import { Request, response, Response } from "express";
+import { Users } from "../entity/Users";
 import connectDB from "../database/db";
 
-const repository = connectDB.getRepository(User)
+const repository = connectDB.getRepository(Users)
 
 export default {
   async store(request: Request, response: Response) {
-    const { email, firstName, password, role } = request.body as User;
+    const { email, firstName, password, role } = request.body as Users;
 
     if (!email || !firstName || !password || !role) {
       response.status(401).json({ error_message: 'All body properties are required' })
@@ -24,12 +24,16 @@ export default {
       password,
       role
     })
-
     await repository.save(createdUser)
 
     const userReturned = await repository.findOne({ where: { email: email } })
 
     response.status(201).json(userReturned)
+  },
+  async findAll(request: Request, response: Response) {
+    const users = await repository.find()
+    console.log(users)
+    return response.status(200).json(users)
 
   }
 }
