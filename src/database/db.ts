@@ -3,7 +3,7 @@ import { DataSource } from "typeorm";
 const connectDB = new DataSource({
 
   type: "postgres",
-  url: "postgres://apollo:apollo@127.0.0.1:5432/apollo",
+  url: process.env.URL_DB_CONNECT,
   logging: true,
   synchronize: true,
   entities: ["./src/entity/**/*.ts"],
