@@ -34,6 +34,10 @@ export default {
     const users = await repository.find()
     console.log(users)
     return response.status(200).json(users)
-
+  },
+  async findOne(request: Request, response: Response) {
+    const users = await repository.find()
+    console.log(users)
+    return response.status(200).json(users)
   }
 }

@@ -15,11 +15,7 @@ export class Posts {
   content: string
 
   @Column('text', { array: true, nullable: true })
-  @ManyToOne(() => Comments, (comment) => comment.id, {
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE',
-    eager: true
-  })
+  @ManyToOne(() => Comments, (comment) => comment.id)
   @JoinTable()
   comments: Array<Comments>
 

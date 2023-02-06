@@ -12,9 +12,12 @@ export class Comments {
   comment: string
 
   @Column('text', { array: true, nullable: true })
-  @OneToMany(() => Post, (post) => post.id, {
-    eager: true
-  })
+  @OneToMany(() => Post, (post) => post.id,
+    {
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
+      eager: true
+    })
   post: Array<Post>
 
   @Column({ nullable: true })
