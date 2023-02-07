@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinTable, OneToMany } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinTable, OneToMany, JoinColumn } from "typeorm"
 import { Users } from "./Users"
 import { Posts as Post } from "./Posts"
 
@@ -12,13 +12,8 @@ export class Comments {
   comment: string
 
   @Column('text', { array: true, nullable: true })
-  @OneToMany(() => Post, (post) => post.id,
-    {
-      onDelete: 'CASCADE',
-      onUpdate: 'CASCADE',
-      eager: true
-    })
-  post: Array<Post>
+  @OneToMany(() => Post, (post) => post.id)
+  post: Post[]
 
   @Column({ nullable: true })
   @ManyToOne(() => Users, (user) => user.id)
