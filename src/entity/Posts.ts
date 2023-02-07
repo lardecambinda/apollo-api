@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinTable } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinTable, OneToMany } from "typeorm"
 import { Users } from "./Users"
 import { Comments } from "./Comments"
 
@@ -14,9 +14,9 @@ export class Posts {
   @Column({ nullable: false })
   content: string
 
-  @Column('text', { array: true, nullable: true })
-  @ManyToOne(() => Comments, (comment) => comment.id)
-  comments: Array<Comments>
+  @Column({ nullable: true })
+  @OneToMany(() => Comments, (comment) => comment.id)
+  comments: Comments
 
   @Column({ nullable: true })
   @ManyToOne(() => Users, (user) => user.id)

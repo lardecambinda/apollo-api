@@ -17,5 +17,10 @@ export default {
     await repository.save(createPost)
 
     return response.status(201).json(createPost)
+  },
+  async findAll(request: Request, response: Response) {
+    const posts = await repository.find()
+    console.log(posts)
+    return response.status(200).json(posts)
   }
 }

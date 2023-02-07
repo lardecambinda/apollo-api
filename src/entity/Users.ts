@@ -22,7 +22,12 @@ export class Users {
     role: boolean;
 
     @Column('text', { array: true, nullable: true })
-    @OneToMany(() => Posts, (post) => post.user)
+    @OneToMany(() => Posts, (post) => post.user, {
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
+        cascade: true,
+        eager: true
+    })
     posts: Array<Posts>
 
     @BeforeInsert()
