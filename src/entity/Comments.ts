@@ -22,7 +22,6 @@ export class Comments {
 
   @Column({ nullable: true })
   @ManyToOne(() => Users, (user) => user.id)
-  @JoinTable()
   user: string
 
 }
