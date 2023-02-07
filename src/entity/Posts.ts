@@ -16,12 +16,10 @@ export class Posts {
 
   @Column('text', { array: true, nullable: true })
   @ManyToOne(() => Comments, (comment) => comment.id)
-  @JoinTable()
   comments: Array<Comments>
 
   @Column({ nullable: true })
   @ManyToOne(() => Users, (user) => user.id)
-  @JoinTable()
   user: string
 
   @Column('text', { array: true })
