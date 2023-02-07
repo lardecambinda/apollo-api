@@ -8,7 +8,7 @@
       "dev:server": "ts-node-dev --respawn --ignore-watch=node_modules --transpile-only src/server.ts",
       "typeorm": "typeorm-ts-node-commonjs",
       "start": "ts-node src/server.ts",
-      "build": "tsc src/server.ts"
+      "build": "tsc"
    },
    "devDependencies": {
       "@types/bcrypt": "^5.0.0",
