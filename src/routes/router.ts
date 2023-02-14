@@ -1,15 +1,12 @@
 import { Router } from "express";
 import UserRouter from "./User";
-import ProductRouter from "./Product";
-import RegisterRouter from "./Register";
-import AuthenticationRouter from "./Authentication";
-
+import PostRouter from "./Posts";
+import CommentsRouter from "./Comments";
 
 const router = Router()
 
 router.use(UserRouter)
-router.use(ProductRouter)
-router.use(RegisterRouter)
-router.use(AuthenticationRouter)
+router.use(PostRouter)
+router.use(CommentsRouter)
 
 export default router
