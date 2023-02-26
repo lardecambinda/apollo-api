@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgres"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model Users {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  password  String
+  user_name String
+  role      Role       @default(USER)
+  Comments  Comments[]
+  posts     Posts[]
+
+  @@map("users")
+}
+
+model Posts {
+  id       String     @id @default(uuid())
+  title    String
+  content  String
+  files    String[]
+  users_id String?
+  comments Comments[]
+  Users    Users?     @relation(fields: [users_id], references: [id])
+
+  @@map("posts")
+}
+
+model Comments {
+  id       String  @id @default(uuid())
+  comment  String
+  posts_id String?
+  users_id String
+  Posts    Posts?  @relation(fields: [posts_id], references: [id])
+  user     Users   @relation(fields: [users_id], references: [id])
+
+  @@map("comments")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
