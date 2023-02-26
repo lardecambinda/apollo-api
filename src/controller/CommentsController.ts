@@ -1,43 +1,52 @@
-import { Users } from './../entity/Users';
-import { Request, Response } from "express";
-import { Comments } from '../entity/Comments';
-import connectDB from '../database/db';
+import { Request, Response } from 'express'
+import { PrismaClient } from '@prisma/client'
+import { CustomRequest } from '../@types'
 
-const repository = connectDB.getRepository(Comments)
-const userRepository = connectDB.getRepository(Users)
+const prisma = new PrismaClient()
 
 export default {
-  async store(request: Request, response: Response) {
-    const { comment, user: userId, post: postId } = request.body as Comments
+  async store(request: CustomRequest, response: Response) {
 
-    if (!comment || !userId || !postId) {
+    const { comment, users_id, posts_id } = request.body.comment
+
+    if (!comment || !users_id || !posts_id) {
       return response.status(401).json({
         error_message: 'comment, user and post properties are required'
       })
     }
 
-    const user = await userRepository.findOneBy({ id: userId })
-
-    console.log(user)
+    const user = await prisma.users.findFirst({ where: { id: users_id } })
 
     if (!user) {
       return response.status(401).json({
         error_message: 'user not exists'
       })
-    } else if (!postId) {
+    } else if (!posts_id) {
       return response.status(401).json({
         error_message: 'post not exists'
       })
     }
 
-    const createComment = repository.create({
-      comment,
-      post: postId,
-      user: userId
+    const createComment = await prisma.comments.create({
+      data: {
+        comment,
+        posts_id,
+        users_id
+      },
+      select: {
+        user: {
+          select: {
+            password: false,
+            posts: true,
+            id: true,
+            email: true,
+            user_name: true,
+            role: true,
+          }
+        }
+      }
     })
 
-    const createdComment = await repository.save(createComment)
-
-    return response.status(201).json(createdComment)
+    return response.status(201).json(createComment)
   }
 }

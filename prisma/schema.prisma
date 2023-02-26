@@ -14,7 +14,7 @@ model Users {
   password  String
   user_name String
   role      Role       @default(USER)
-  Comments  Comments[]
+  comments  Comments[]
   posts     Posts[]
 
   @@map("users")
@@ -25,20 +25,20 @@ model Posts {
   title    String
   content  String
   files    String[]
-  users_id String?
+  user_id  String?
   comments Comments[]
-  Users    Users?     @relation(fields: [users_id], references: [id])
+  users    Users?     @relation(fields: [user_id], references: [id])
 
   @@map("posts")
 }
 
 model Comments {
-  id       String  @id @default(uuid())
-  comment  String
-  posts_id String?
-  users_id String
-  Posts    Posts?  @relation(fields: [posts_id], references: [id])
-  user     Users   @relation(fields: [users_id], references: [id])
+  id      String  @id @default(uuid())
+  comment String
+  post_id String?
+  user_id String
+  posts   Posts?  @relation(fields: [post_id], references: [id])
+  user    Users   @relation(fields: [user_id], references: [id])
 
   @@map("comments")
 }
