@@ -1,4 +1,4 @@
-import { Comments, Posts, Users } from '@prisma/client'
+import { Comments, File, Posts, Users } from '@prisma/client'
 import { Request } from 'express';
 
 export interface CustomRequest extends Request {
@@ -8,6 +8,7 @@ export interface CustomRequest extends Request {
   body: {
     user: Users,
     post: Posts,
+    files: File[]
     comment: Comments
   }
 }

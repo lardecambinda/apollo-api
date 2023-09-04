@@ -16,18 +16,34 @@ model Users {
   role      Role       @default(USER)
   comments  Comments[]
   posts     Posts[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 
   @@map("users")
+}
+
+model File {
+  id        String     @id @default(uuid())
+  file      String
+  file_date DateTime @default(now())
+  post_id   String
+  post   Posts?  @relation(fields: [post_id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
+  @@map("file")
 }
 
 model Posts {
   id       String     @id @default(uuid())
   title    String
   content  String
-  files    String[]
   user_id  String?
-  comments Comments[]
-  users    Users?     @relation(fields: [user_id], references: [id])
+  files    File[]
+  comments Comments[] 
+  users    Users?    @relation(fields: [user_id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 
   @@map("posts")
 }
@@ -39,6 +55,8 @@ model Comments {
   user_id String
   posts   Posts?  @relation(fields: [post_id], references: [id])
   user    Users   @relation(fields: [user_id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 
   @@map("comments")
 }
