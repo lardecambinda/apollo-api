@@ -7,21 +7,21 @@ const prisma = new PrismaClient()
 export default {
   async store(request: CustomRequest, response: Response) {
 
-    const { comment, users_id, posts_id } = request.body.comment
+    const { comment, user_id, post_id } = request.body.comment
 
-    if (!comment || !users_id || !posts_id) {
+    if (!comment || !user_id || !post_id) {
       return response.status(401).json({
         error_message: 'comment, user and post properties are required'
       })
     }
 
-    const user = await prisma.users.findFirst({ where: { id: users_id } })
+    const user = await prisma.users.findFirst({ where: { id: user_id } })
 
     if (!user) {
       return response.status(401).json({
         error_message: 'user not exists'
       })
-    } else if (!posts_id) {
+    } else if (!post_id) {
       return response.status(401).json({
         error_message: 'post not exists'
       })
@@ -30,8 +30,8 @@ export default {
     const createComment = await prisma.comments.create({
       data: {
         comment,
-        posts_id,
-        users_id
+        post_id,
+        user_id
       },
       select: {
         user: {

@@ -6,7 +6,7 @@ const prisma = new PrismaClient()
 
 export default {
   async store(request: CustomRequest, response: Response) {
-    const { title, content, files, users_id } = request.body.post
+    const { title, content, files, user_id } = request.body.post
 
     if (!title || !content) return response.status(401).json({
       error_message: 'title and content properties are required'
@@ -15,7 +15,7 @@ export default {
     // const createPost = repository.create({ title, content, files, user })
     const createPost = await prisma.posts.create({
       data: {
-        title, content, files, users_id
+        title, content, files, user_id
       }
     })
 
@@ -28,7 +28,7 @@ export default {
         title: true,
         content: true,
         files: true,
-        users_id: true,
+        user_id: true,
         comments: true,
         users: {
           select: {
