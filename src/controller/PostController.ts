@@ -12,7 +12,7 @@ export default {
       error_message: 'title and content properties are required'
     })
 
-    // const createPost = repository.create({ title, content, files, user })
+    // const createPost = repository.create({ title, content, , user })
 
     const userExists = await prisma.users.findUnique({ where: { id: user_id }})
 
@@ -32,15 +32,8 @@ export default {
         id: true,
         title: true,
         content: true,
-        files: true,
         user_id: true,
         comments: true,
-        users: {
-          select: {
-            id: true,
-            user_name: true
-          }
-        }
       }
     })
     return response.status(200).json(posts)

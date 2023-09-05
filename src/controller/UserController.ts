@@ -1,4 +1,5 @@
 import { Response } from 'express'
+import { hashSync } from 'bcrypt'
 import { PrismaClient, } from '@prisma/client'
 import { CustomRequest } from '../@types'
 
@@ -16,10 +17,11 @@ export default {
 
     if (userExist) return response.status(401).json({ error_message: 'email already exists' })
 
+    
     await prisma.users.create({
       data: {
         email,
-        password,
+        password: hashSync(password, 8),
         user_name,
       },
     })

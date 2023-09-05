@@ -23,11 +23,11 @@ model Users {
 }
 
 model File {
-  id        String     @id @default(uuid())
+  id        String   @id @default(uuid())
   file      String
   file_date DateTime @default(now())
   post_id   String
-  post   Posts?  @relation(fields: [post_id], references: [id])
+  post      Posts    @relation(fields: [post_id], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt @default(now())
 
@@ -39,7 +39,7 @@ model Posts {
   title    String
   content  String
   user_id  String?
-  files    File[]
+  files_id File[]
   comments Comments[] 
   users    Users?    @relation(fields: [user_id], references: [id])
   createdAt DateTime @default(now())
