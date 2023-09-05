@@ -16,8 +16,8 @@ model Users {
   role      Role       @default(USER)
   comments  Comments[]
   posts     Posts[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
 
   @@map("users")
 }
@@ -29,34 +29,34 @@ model File {
   post_id   String
   post      Posts    @relation(fields: [post_id], references: [id])
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@map("file")
 }
 
 model Posts {
-  id       String     @id @default(uuid())
-  title    String
-  content  String
-  user_id  String?
-  files_id File[]
-  comments Comments[] 
-  users    Users?    @relation(fields: [user_id], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  id        String     @id @default(uuid())
+  title     String
+  content   String
+  user_id   String
+  files_id  File[]
+  comments  Comments[]
+  users     Users?     @relation(fields: [user_id], references: [id])
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
 
   @@map("posts")
 }
 
 model Comments {
-  id      String  @id @default(uuid())
-  comment String
-  post_id String?
-  user_id String
-  posts   Posts?  @relation(fields: [post_id], references: [id])
-  user    Users   @relation(fields: [user_id], references: [id])
+  id        String   @id @default(uuid())
+  comment   String
+  post_id   String?
+  user_id   String
+  posts     Posts?   @relation(fields: [post_id], references: [id])
+  user      Users    @relation(fields: [user_id], references: [id])
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@map("comments")
 }

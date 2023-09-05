@@ -1,30 +1,38 @@
-import { Response } from 'express'
-import { PrismaClient } from '@prisma/client'
-import { CustomRequest } from '../@types'
+import { Response } from "express";
+import { PrismaClient } from "@prisma/client";
+import { CustomRequest } from "../@types";
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 export default {
   async store(request: CustomRequest, response: Response) {
-    const { title, content, user_id } = request.body.post
+    const { title, content, user_id } = request.body.post;
 
-    if (!title || !content) return response.status(401).json({
-      error_message: 'title and content properties are required'
-    })
+    if (!title || !content)
+      return response.status(401).json({
+        error_message: "title and content properties are required",
+      });
 
     // const createPost = repository.create({ title, content, , user })
 
-    const userExists = await prisma.users.findUnique({ where: { id: user_id }})
+    const userExists = await prisma.users.findUnique({
+      where: { id: user_id },
+    });
 
-    if(!userExists) return response.status(404).json({ error_message: "User Doesn't exists"})
+    if (!userExists)
+      return response
+        .status(404)
+        .json({ error_message: "User Doesn't exists" });
 
     const createPost = await prisma.posts.create({
       data: {
-        title, content, user_id
-      }
-    })
+        title,
+        content,
+        user_id,
+      },
+    });
 
-    return response.status(201).json(createPost)
+    return response.status(201).json({ ...createPost });
   },
   async findAll(_: any, response: Response) {
     const posts = await prisma.posts.findMany({
@@ -34,8 +42,21 @@ export default {
         content: true,
         user_id: true,
         comments: true,
-      }
-    })
-    return response.status(200).json(posts)
-  }
-}
+        users: {
+          select: {
+            password: false,
+            id: true,
+            email: true,
+            user_name: true,
+            role: true,
+            createdAt: true,
+            updatedAt: true,
+            comments: false,
+            posts: false,
+          },
+        },
+      },
+    });
+    return response.status(200).json(posts);
+  },
+};
