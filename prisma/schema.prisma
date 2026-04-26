@@ -3,9 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider          = "postgres"
-  url               = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Users {
@@ -21,13 +21,16 @@ model Users {
 }
 
 model Posts {
-  id       String     @id @default(uuid())
-  title    String
-  content  String
-  files    String[]
-  user_id  String?
-  comments Comments[]
-  users    Users?     @relation(fields: [user_id], references: [id])
+  id        String     @id @default(uuid())
+  title     String
+  content   String
+  files     String[]
+  tags      String[]   @default([])
+  user_id   String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  comments  Comments[]
+  users     Users?     @relation(fields: [user_id], references: [id])
 
   @@map("posts")
 }

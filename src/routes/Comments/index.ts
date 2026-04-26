@@ -4,6 +4,7 @@ import CommentsController from "../../controller/CommentsController";
 const router = Router()
 
 router.post('/comment/create', CommentsController.store)
-router.post('/comment/list', CommentsController.store)
+router.get('/comment/list', CommentsController.findAll)
+router.delete('/comment/:id', CommentsController.destroy)
 
 export default router
