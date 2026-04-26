@@ -4,6 +4,7 @@ import PostRouter from "./Posts";
 import CommentsRouter from "./Comments";
 import AuthRouter from "./Auth";
 import SearchRouter from "./Search";
+import UploadRouter from "./Upload";
 import { authMiddleware } from "../middleware/auth";
 
 const router = Router()
@@ -17,5 +18,6 @@ router.use(PostRouter)
 router.use(authMiddleware)
 router.use(UserRouter)
 router.use(CommentsRouter)
+router.use(UploadRouter)
 
 export default router
