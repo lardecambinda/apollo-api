@@ -9,9 +9,14 @@ export interface CustomRequest extends Request {
   body: {
     user: Users,
     post: Posts,
+    category?: any,
+    user_id?: string,
   }
   user?: {
     id: string
     role: string
+    user_id?: string
   }
+  loggedUserId?: string
+  loggedUserRole?: string
 }

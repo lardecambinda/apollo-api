@@ -1,6 +1,6 @@
 import { Response } from 'express'
 import { PrismaClient } from '@prisma/client'
-import { CustomRequest } from '../@types/types'
+import { CustomRequest } from '../@types'
 
 const prisma = new PrismaClient()
 
