@@ -1,33 +1,27 @@
-/*
-  Warnings:
+-- DropForeignKey
+ALTER TABLE "file" DROP CONSTRAINT "file_post_id_fkey";
 
-  - You are about to drop the column `files` on the `posts` table. All the data in the column will be lost.
+-- DropForeignKey
+ALTER TABLE "posts" DROP CONSTRAINT "posts_user_id_fkey";
 
-*/
--- AlterTable
-ALTER TABLE "comments" ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+-- DropForeignKey
+ALTER TABLE "comments" DROP CONSTRAINT "comments_post_id_fkey";
 
--- AlterTable
-ALTER TABLE "posts" DROP COLUMN "files",
-ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+-- DropForeignKey
+ALTER TABLE "comments" DROP CONSTRAINT "comments_user_id_fkey";
 
--- AlterTable
-ALTER TABLE "users" ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+-- DropTable
+DROP TABLE "users";
 
--- CreateTable
-CREATE TABLE "file" (
-    "id" TEXT NOT NULL,
-    "file" TEXT NOT NULL,
-    "file_date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "post_id" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+-- DropTable
+DROP TABLE "file";
 
-    CONSTRAINT "file_pkey" PRIMARY KEY ("id")
-);
+-- DropTable
+DROP TABLE "posts";
 
--- AddForeignKey
-ALTER TABLE "file" ADD CONSTRAINT "file_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+-- DropTable
+DROP TABLE "comments";
+
+-- DropEnum
+DROP TYPE "Role";
+
