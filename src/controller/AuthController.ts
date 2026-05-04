@@ -1,55 +1,44 @@
-import { Response } from "express";
-import { compare } from "bcrypt";
-import { sign } from "jsonwebtoken";
-import { PrismaClient } from "@prisma/client";
-import { CustomRequest } from "../@types";
+import { Response } from 'express'
+import { PrismaClient } from '@prisma/client'
+import { CustomRequest } from '../@types'
+import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 export default {
-  async authenticate(request: CustomRequest, response: Response) {
-    const { email, password } = request.body.user;
+  async signIn(request: CustomRequest, response: Response) {
+    const { email, password } = request.body.user
 
     if (!email || !password) {
-      return response
-        .status(401)
-        .json({ error_message: "All body properties are required" });
+      return response.status(401).json({ error_message: 'email and password are required' })
     }
 
-    const user = await prisma.users.findUnique({ where: { email: email } });
+    const user = await prisma.users.findUnique({ where: { email } })
 
-    if (!user)
-      return response
-        .status(401)
-        .json({ error_message: "User dose not exists" });
+    if (!user) {
+      return response.status(401).json({ error_message: 'Invalid credentials' })
+    }
 
-    const passwordIsValid = await compare(password, user.password);
+    const passwordMatch = await bcrypt.compare(password, user.password)
 
-    if (!passwordIsValid)
-      return response
-        .status(401)
-        .json({ error_message: "User not Authorized, password is incorrect" });
+    if (!passwordMatch) {
+      return response.status(401).json({ error_message: 'Invalid credentials' })
+    }
 
-    const token = sign({ id: user.id, role: user.role }, "secret", {
-      expiresIn: "1d",
-    });
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '24h' }
+    )
 
-    const userReturned = await prisma.users.findUnique({
-      where: {
-        email: email,
-      },
-      select: {
-        password: false,
-        id: true,
-        email: false,
-        user_name: true,
-        role: true,
-      },
-    });
+    const userReturned = {
+      id: user.id,
+      email: user.email,
+      user_name: user.user_name,
+      role: user.role,
+    }
 
-    return response.status(200).json({
-      userReturned,
-      token,
-    });
-  },
-};
+    return response.status(200).json({ token, userReturned })
+  }
+}
