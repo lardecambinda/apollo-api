@@ -11,6 +11,7 @@ const userSelect = {
   email: true,
   user_name: true,
   role: true,
+  active: true,
 }
 
 export default {
@@ -46,6 +47,11 @@ export default {
   async findOne(request: CustomRequest, response: Response) {
     const { id } = request.params
 
+    // EDITOR só pode ver seus próprios dados
+    if (request.user?.role === 'EDITOR' && request.user.id !== id) {
+      return response.status(403).json({ error_message: 'Você não tem permissão para ver este usuário' })
+    }
+
     const user = await prisma.users.findFirst({
       where: { id },
       select: userSelect
@@ -79,10 +85,24 @@ export default {
     const user = await prisma.users.findUnique({ where: { id } })
     if (!user) return response.status(404).json({ error_message: 'user not found' })
 
-    await prisma.comments.deleteMany({ where: { user_id: id } })
     await prisma.posts.deleteMany({ where: { user_id: id } })
     await prisma.users.delete({ where: { id } })
 
     return response.status(204).send()
+  },
+
+  async toggle(request: CustomRequest, response: Response) {
+    const { id } = request.params
+
+    const user = await prisma.users.findUnique({ where: { id } })
+    if (!user) return response.status(404).json({ error_message: 'user not found' })
+
+    const updated = await prisma.users.update({
+      where: { id },
+      data: { active: !user.active },
+      select: userSelect
+    })
+
+    return response.status(200).json(updated)
   }
 }

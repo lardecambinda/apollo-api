@@ -9,44 +9,63 @@ datasource db {
 }
 
 model Users {
-  id        String     @id @default(uuid())
-  email     String     @unique
-  password  String
-  user_name String
-  role      Role       @default(USER)
-  comments  Comments[]
-  posts     Posts[]
+  id         String       @id @default(uuid())
+  email      String       @unique
+  password   String
+  user_name  String
+  role       Role         @default(EDITOR)
+  active     Boolean      @default(true)
+  posts      Posts[]
+  categories Categories[]
 
   @@map("users")
 }
 
 model Posts {
-  id        String     @id @default(uuid())
-  title     String
-  content   String
-  files     String[]
-  tags      String[]   @default([])
-  user_id   String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  comments  Comments[]
-  users     Users?     @relation(fields: [user_id], references: [id])
+  id           String     @id @default(uuid())
+  title        String
+  content      String
+  files        String[]
+  tags         String[]   @default([])
+  status       PostStatus @default(DRAFT)
+  meeting_date DateTime?
+  user_id      String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  users        Users?     @relation(fields: [user_id], references: [id])
 
   @@map("posts")
 }
 
-model Comments {
-  id      String  @id @default(uuid())
-  comment String
-  post_id String?
-  user_id String
-  posts   Posts?  @relation(fields: [post_id], references: [id])
-  user    Users   @relation(fields: [user_id], references: [id])
+model Categories {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  user_id   String
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  users     Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@map("comments")
+  @@map("categories")
+}
+
+model Notifications {
+  id        String   @id @default(uuid())
+  post_id   String
+  user_id   String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
 }
 
 enum Role {
-  USER
   ADMIN
+  EDITOR
+}
+
+enum PostStatus {
+  PUBLISHED
+  DRAFT
+  PENDING
 }

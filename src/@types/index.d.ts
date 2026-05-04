@@ -1,4 +1,4 @@
-import { Comments, Posts, Users } from '@prisma/client'
+import { Posts, Users } from '@prisma/client'
 import { Request } from 'express';
 
 export interface CustomRequest extends Request {
@@ -9,7 +9,6 @@ export interface CustomRequest extends Request {
   body: {
     user: Users,
     post: Posts,
-    comment: Comments
   }
   user?: {
     id: string
