@@ -3,65 +3,69 @@ generator client {
 }
 
 datasource db {
-  provider          = "postgres"
-  url               = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Users {
-  id        String     @id @default(uuid())
-  email     String     @unique
-  password  String
-  user_name String
-  role      Role       @default(USER)
-  comments  Comments[]
-  posts     Posts[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @default(now()) @updatedAt
+  id         String       @id @default(uuid())
+  email      String       @unique
+  password   String
+  user_name  String
+  role       Role         @default(EDITOR)
+  active     Boolean      @default(true)
+  posts      Posts[]
+  categories Categories[]
 
   @@map("users")
 }
 
-model File {
-  id        String   @id @default(uuid())
-  file      String
-  file_date DateTime @default(now())
-  post_id   String
-  post      Posts    @relation(fields: [post_id], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  @@map("file")
-}
-
 model Posts {
-  id        String     @id @default(uuid())
-  title     String
-  content   String
-  user_id   String
-  files_id  File[]
-  comments  Comments[]
-  users     Users?     @relation(fields: [user_id], references: [id])
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @default(now()) @updatedAt
+  id           String     @id @default(uuid())
+  title        String
+  content      String
+  files        String[]
+  tags         String[]   @default([])
+  status       PostStatus @default(DRAFT)
+  meeting_date DateTime?
+  user_id      String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  users        Users?     @relation(fields: [user_id], references: [id])
 
   @@map("posts")
 }
 
-model Comments {
+model Categories {
   id        String   @id @default(uuid())
-  comment   String
-  post_id   String?
+  name      String   @unique
   user_id   String
-  posts     Posts?   @relation(fields: [post_id], references: [id])
-  user      Users    @relation(fields: [user_id], references: [id])
+  status    String   @default("PENDING")
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  users     Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@map("comments")
+  @@map("categories")
+}
+
+model Notifications {
+  id        String   @id @default(uuid())
+  post_id   String
+  user_id   String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
 }
 
 enum Role {
-  USER
   ADMIN
+  EDITOR
+}
+
+enum PostStatus {
+  PUBLISHED
+  DRAFT
+  PENDING
 }
