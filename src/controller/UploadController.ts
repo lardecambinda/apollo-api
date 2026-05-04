@@ -3,15 +3,21 @@ import { CustomRequest } from '../@types'
 import { createClient } from '@supabase/supabase-js'
 import multer from 'multer'
 
-const supabase = createClient(
-  process.env.SUPABASE_URL as string,
-  process.env.SUPABASE_SERVICE_KEY as string
-)
+const supabase = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY
+  ? createClient(
+      process.env.SUPABASE_URL as string,
+      process.env.SUPABASE_SERVICE_KEY as string
+    )
+  : null
 
 export const upload = multer({ storage: multer.memoryStorage() })
 
 export default {
   async uploadFiles(request: CustomRequest & { files?: Express.Multer.File[] }, response: Response) {
+    if (!supabase) {
+      return response.status(503).json({ error_message: 'Upload service not configured' })
+    }
+
     const files = request.files
     if (!files || files.length === 0) {
       return response.status(400).json({ error_message: 'No files provided' })
