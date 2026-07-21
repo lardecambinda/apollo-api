@@ -6,6 +6,7 @@ import SearchRouter from "./Search";
 import UploadRouter from "./Upload";
 import { categoryRoutes } from "./Category";
 import { notificationRoutes } from "./Notification";
+import TranscriptionRouter from "./Transcription";
 import { authMiddleware } from "../middleware/auth";
 
 const router = Router()
@@ -21,5 +22,6 @@ router.use(UserRouter)
 router.use(UploadRouter)
 router.use(categoryRoutes)
 router.use(notificationRoutes)
+router.use(TranscriptionRouter)
 
 export default router

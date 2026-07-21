@@ -15,8 +15,9 @@ model Users {
   user_name  String
   role       Role         @default(EDITOR)
   active     Boolean      @default(true)
-  posts      Posts[]
-  categories Categories[]
+  posts           Posts[]
+  categories      Categories[]
+  transcriptions  Transcriptions[]
 
   @@map("users")
 }
@@ -68,4 +69,33 @@ enum PostStatus {
   PUBLISHED
   DRAFT
   PENDING
+}
+
+model Transcriptions {
+  id           String              @id @default(uuid())
+  filename     String
+  originalName String
+  fileSize     Int
+  mimeType     String
+  status       TranscriptionStatus @default(PENDING)
+  progress     Int                 @default(0)
+  text         String?
+  errorMessage String?
+  retryCount   Int                 @default(0)
+  audioUrl     String
+  user_id      String
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  completedAt  DateTime?
+  users        Users?              @relation(fields: [user_id], references: [id])
+
+  @@map("transcriptions")
+}
+
+enum TranscriptionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  ERROR
+  CANCELLED
 }
