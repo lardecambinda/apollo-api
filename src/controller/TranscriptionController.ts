@@ -132,7 +132,7 @@ export default {
     const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${originalname}`
 
     const blob = await put(filename, request.file.buffer, {
-      access: 'private',
+      access: 'public',
       contentType: mimetype,
     })
 
