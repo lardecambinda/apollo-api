@@ -66,25 +66,30 @@ async function processQueue() {
     notifyProgress(id, { status: 'COMPLETED', progress: 100, text: result.text })
 
   } catch (error: any) {
-    const transcription = await prisma.transcriptions.findUnique({ where: { id } })
-    if (transcription?.status === 'CANCELLED') {
-      processing = false
-      processQueue()
-      return
-    }
+    console.error('[processQueue error]', error)
+    try {
+      const transcription = await prisma.transcriptions.findUnique({ where: { id } })
+      if (transcription?.status === 'CANCELLED') {
+        processing = false
+        processQueue()
+        return
+      }
 
-    if (transcription && transcription.retryCount < 1) {
-      await prisma.transcriptions.update({
-        where: { id },
-        data: { retryCount: { increment: 1 }, progress: 0 }
-      })
-      transcriptionQueue.unshift(id)
-    } else {
-      await prisma.transcriptions.update({
-        where: { id },
-        data: { status: 'ERROR', errorMessage: error.message || 'Transcription failed' }
-      })
-      notifyProgress(id, { status: 'ERROR', errorMessage: error.message })
+      if (transcription && transcription.retryCount < 1) {
+        await prisma.transcriptions.update({
+          where: { id },
+          data: { retryCount: { increment: 1 }, progress: 0 }
+        })
+        transcriptionQueue.unshift(id)
+      } else if (transcription) {
+        await prisma.transcriptions.update({
+          where: { id },
+          data: { status: 'ERROR', errorMessage: error.message || 'Transcription failed' }
+        })
+        notifyProgress(id, { status: 'ERROR', errorMessage: error.message })
+      }
+    } catch (dbErr) {
+      console.error('[processQueue dbErr]', dbErr)
     }
   } finally {
     processing = false
