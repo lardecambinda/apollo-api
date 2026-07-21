@@ -3,6 +3,9 @@ services:
     build: .
     ports:
       - "3333:3333"
+    env_file:
+      - .env
+      - .env.local
     environment:
       - DATABASE_URL=postgresql://larfraterno:larfraterno@db:5432/larfraterno?schema=public
       - DIRECT_URL=postgresql://larfraterno:larfraterno@db:5432/larfraterno?schema=public

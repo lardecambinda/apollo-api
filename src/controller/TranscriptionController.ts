@@ -113,41 +113,46 @@ const transcriptionSelect = {
 
 export default {
   async uploadAudio(request: CustomRequest & { file?: Express.Multer.File }, response: Response) {
-    if (!request.file) {
-      return response.status(400).json({ error_message: 'No audio file provided' })
+    try {
+      if (!request.file) {
+        return response.status(400).json({ error_message: 'No audio file provided' })
+      }
+
+      const { originalname, size, mimetype } = request.file
+      const userId = request.user?.id
+
+      if (!userId) {
+        return response.status(401).json({ error_message: 'User not authenticated' })
+      }
+
+      const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${originalname}`
+
+      const blob = await put(filename, request.file.buffer, {
+        access: 'private',
+        contentType: mimetype,
+      })
+
+      const transcription = await prisma.transcriptions.create({
+        data: {
+          filename,
+          originalName: originalname,
+          fileSize: size,
+          mimeType: mimetype,
+          audioUrl: blob.url,
+          user_id: userId,
+          status: 'PENDING'
+        },
+        select: transcriptionSelect
+      })
+
+      transcriptionQueue.push(transcription.id)
+      processQueue()
+
+      return response.status(201).json(transcription)
+    } catch (error: any) {
+      console.error('[uploadAudio error]', error)
+      return response.status(500).json({ error_message: error.message || 'Erro ao realizar upload do áudio' })
     }
-
-    const { originalname, size, mimetype } = request.file
-    const userId = request.user?.id
-
-    if (!userId) {
-      return response.status(401).json({ error_message: 'User not authenticated' })
-    }
-
-    const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${originalname}`
-
-    const blob = await put(filename, request.file.buffer, {
-      access: 'private',
-      contentType: mimetype,
-    })
-
-    const transcription = await prisma.transcriptions.create({
-      data: {
-        filename,
-        originalName: originalname,
-        fileSize: size,
-        mimeType: mimetype,
-        audioUrl: blob.url,
-        user_id: userId,
-        status: 'PENDING'
-      },
-      select: transcriptionSelect
-    })
-
-    transcriptionQueue.push(transcription.id)
-    processQueue()
-
-    return response.status(201).json(transcription)
   },
 
   async findAll(request: CustomRequest, response: Response) {
