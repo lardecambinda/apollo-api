@@ -3,13 +3,18 @@ import { CustomRequest } from '../@types'
 import jwt from 'jsonwebtoken'
 
 export function authMiddleware(request: CustomRequest, response: Response, next: NextFunction) {
-  const authHeader = request.headers.authorization
+  let token: string | undefined
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return response.status(401).json({ error_message: 'Token not provided' })
+  const authHeader = request.headers.authorization
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1]
+  } else if (request.query.token) {
+    token = request.query.token as string
   }
 
-  const token = authHeader.split(' ')[1]
+  if (!token) {
+    return response.status(401).json({ error_message: 'Token not provided' })
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string)
