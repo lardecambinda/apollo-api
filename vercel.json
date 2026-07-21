@@ -1,7 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npx prisma generate && npx tsc",
-  "outputDirectory": "build",
+  "installCommand": "npm install && npx prisma generate",
   "builds": [
     {
       "src": "api/index.ts",

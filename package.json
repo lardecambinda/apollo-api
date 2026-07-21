@@ -9,6 +9,7 @@
     "typeorm": "typeorm-ts-node-commonjs",
     "start": "node build/server.js",
     "build": "tsc && npx prisma generate",
+    "postinstall": "npx prisma generate",
     "seed": "ts-node prisma/seed.ts",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
