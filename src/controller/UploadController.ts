@@ -17,7 +17,7 @@ export default {
     for (const file of files) {
       const filename = `posts/${Date.now()}-${file.originalname}`
       const blob = await put(filename, file.buffer, {
-        access: 'public',
+        access: 'private',
         contentType: file.mimetype,
       })
       urls.push(blob.url)
