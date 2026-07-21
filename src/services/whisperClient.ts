@@ -8,7 +8,7 @@ export interface TranscriptionProgress {
   errorMessage?: string
 }
 
-const WHISPER_SERVER_URL = process.env.WHISPER_SERVER_URL || 'http://localhost:8000'
+const getWhisperServerUrl = () => process.env.WHISPER_SERVER_URL || 'http://10.0.0.107:8000'
 
 class WhisperClient {
   async transcribe(
@@ -34,7 +34,8 @@ class WhisperClient {
     form.append('language', 'pt')
     form.append('model', 'small')
 
-    const response = await axios.post(`${WHISPER_SERVER_URL}/transcribe`, form, {
+    const whisperUrl = getWhisperServerUrl()
+    const response = await axios.post(`${whisperUrl}/transcribe`, form, {
       headers: {
         ...form.getHeaders(),
       },
