@@ -4,6 +4,8 @@ import { authMiddleware } from '../../middleware/auth'
 
 const router = Router()
 
+router.post('/transcription/upload-token', authMiddleware, TranscriptionController.handleUploadToken)
+router.post('/transcription/create', authMiddleware, TranscriptionController.create)
 router.post('/transcription/upload', authMiddleware, upload.single('audio'), TranscriptionController.uploadAudio)
 router.get('/transcription/list', authMiddleware, TranscriptionController.findAll)
 router.get('/transcription/:id', authMiddleware, TranscriptionController.findOne)
