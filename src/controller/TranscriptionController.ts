@@ -2,7 +2,7 @@ import { Request, Response } from 'express'
 import { PrismaClient } from '@prisma/client'
 import { CustomRequest } from '../@types'
 import multer from 'multer'
-import { put, del } from '@vercel/blob'
+import { saveFile, deleteFile } from '../services/storage'
 import { whisperClient, TranscriptionProgress } from '../services/whisperClient'
 
 const prisma = new PrismaClient()
@@ -127,10 +127,7 @@ export default {
 
       const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${originalname}`
 
-      const blob = await put(filename, request.file.buffer, {
-        access: 'private',
-        contentType: mimetype,
-      })
+      const audioUrl = await saveFile(filename, request.file.buffer, mimetype)
 
       const transcription = await prisma.transcriptions.create({
         data: {
@@ -138,7 +135,7 @@ export default {
           originalName: originalname,
           fileSize: size,
           mimeType: mimetype,
-          audioUrl: blob.url,
+          audioUrl,
           user_id: userId,
           status: 'PENDING'
         },
@@ -305,9 +302,7 @@ export default {
     }
 
     if (transcription.audioUrl) {
-      try {
-        await del(transcription.audioUrl)
-      } catch {}
+      await deleteFile(transcription.audioUrl)
     }
 
     await prisma.transcriptions.delete({ where: { id } })

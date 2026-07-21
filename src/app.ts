@@ -30,9 +30,14 @@ app.use(cors({
   credentials: true
 }))
 
+import path from "path";
+
 // Body parser with size limits
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }))
 app.use(bodyParser.json({ limit: '10mb' }))
+
+// Static files for local development upload
+app.use('/uploads', express.static(path.resolve('uploads')))
 
 app.get('/', (_req, res) => {
   res.json({ status: 'ok', name: 'Apollo API', version: '1.0.0' })

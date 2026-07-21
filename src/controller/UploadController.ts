@@ -1,6 +1,6 @@
 import { Response } from 'express'
 import { CustomRequest } from '../@types'
-import { put } from '@vercel/blob'
+import { saveFile } from '../services/storage'
 import multer from 'multer'
 
 export const upload = multer({ storage: multer.memoryStorage() })
@@ -16,11 +16,8 @@ export default {
 
     for (const file of files) {
       const filename = `posts/${Date.now()}-${file.originalname}`
-      const blob = await put(filename, file.buffer, {
-        access: 'private',
-        contentType: file.mimetype,
-      })
-      urls.push(blob.url)
+      const fileUrl = await saveFile(filename, file.buffer, file.mimetype)
+      urls.push(fileUrl)
     }
 
     return response.status(200).json({ urls })
