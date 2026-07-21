@@ -1,5 +1,7 @@
 import FormData from 'form-data'
 import axios from 'axios'
+import path from 'path'
+import fs from 'fs'
 
 export interface TranscriptionProgress {
   status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'ERROR' | 'CANCELLED'
@@ -15,24 +17,35 @@ class WhisperClient {
     audioUrl: string,
     onProgress?: (progress: number) => void
   ): Promise<{ text: string }> {
-    const audioResponse = await axios.get(audioUrl, {
-      responseType: 'arraybuffer',
-      onDownloadProgress: (progressEvent) => {
-        if (progressEvent.total && onProgress) {
-          const percent = Math.round((progressEvent.loaded * 30) / progressEvent.total)
-          onProgress(percent)
-        }
-      }
-    })
+    let audioBuffer: Buffer
+    let contentType = 'audio/wav'
 
-    const contentType = (audioResponse.headers['content-type'] as string) || 'audio/wav'
+    if (audioUrl.includes('/uploads/')) {
+      const filename = path.basename(audioUrl)
+      const localPath = path.resolve('uploads', filename)
+      audioBuffer = await fs.promises.readFile(localPath)
+      if (onProgress) onProgress(30)
+    } else {
+      const audioResponse = await axios.get(audioUrl, {
+        responseType: 'arraybuffer',
+        onDownloadProgress: (progressEvent) => {
+          if (progressEvent.total && onProgress) {
+            const percent = Math.round((progressEvent.loaded * 30) / progressEvent.total)
+            onProgress(percent)
+          }
+        }
+      })
+      audioBuffer = Buffer.from(audioResponse.data)
+      contentType = (audioResponse.headers['content-type'] as string) || 'audio/wav'
+    }
+
     const form = new FormData()
-    form.append('file', Buffer.from(audioResponse.data), {
+    form.append('file', audioBuffer, {
       filename: 'audio.wav',
       contentType
     })
     form.append('language', 'pt')
-    form.append('model', 'small')
+    form.append('model', 'large-v3')
 
     const response = await axios.post(`${WHISPER_SERVER_URL}/transcribe`, form, {
       headers: {
