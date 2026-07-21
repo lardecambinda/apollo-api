@@ -15,6 +15,8 @@ const router = Router()
 router.use(AuthRouter)
 router.use(SearchRouter)
 router.use(PostRouter)
+router.get("/favicon.ico", (_, res) => res.status(204).end())
+router.get("/favicon.png", (_, res) => res.status(204).end())
 
 // protected
 router.use(authMiddleware)

@@ -3,6 +3,8 @@ import { PrismaClient } from '@prisma/client'
 import { CustomRequest } from '../@types'
 import multer from 'multer'
 import { put, del } from '@vercel/blob'
+import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
+import path from 'path'
 import { whisperClient, TranscriptionProgress } from '../services/whisperClient'
 
 const prisma = new PrismaClient()
@@ -117,6 +119,66 @@ const transcriptionSelect = {
 }
 
 export default {
+  async handleUploadToken(request: CustomRequest, response: Response) {
+    try {
+      const body = request.body as unknown as HandleUploadBody
+      const jsonResponse = await handleUpload({
+        body,
+        request,
+        onBeforeGenerateToken: async () => {
+          return {
+            allowedContentTypes: ['audio/*', 'video/*'],
+            tokenPayload: JSON.stringify({ userId: request.user?.id })
+          }
+        },
+        onUploadCompleted: async () => {}
+      })
+      return response.json(jsonResponse)
+    } catch (error: unknown) {
+      const err = error as Error
+      console.error('[handleUploadToken error]', err)
+      return response.status(400).json({ error_message: err.message || 'Error generating upload token' })
+    }
+  },
+
+  async create(request: CustomRequest, response: Response) {
+    const { originalName, fileSize, mimeType, audioUrl } = (request.body || {}) as {
+      originalName?: string
+      fileSize?: number
+      mimeType?: string
+      audioUrl?: string
+    }
+    const userId = request.user?.id
+
+    if (!userId) {
+      return response.status(401).json({ error_message: 'User not authenticated' })
+    }
+
+    if (!audioUrl || !originalName) {
+      return response.status(400).json({ error_message: 'audioUrl and originalName are required' })
+    }
+
+    const filename = path.basename(audioUrl)
+
+    const transcription = await prisma.transcriptions.create({
+      data: {
+        filename,
+        originalName,
+        fileSize: fileSize || 0,
+        mimeType: mimeType || 'audio/wav',
+        audioUrl,
+        user_id: userId,
+        status: 'PENDING'
+      },
+      select: transcriptionSelect
+    })
+
+    transcriptionQueue.push(transcription.id)
+    processQueue()
+
+    return response.status(201).json(transcription)
+  },
+
   async uploadAudio(request: CustomRequest & { file?: Express.Multer.File }, response: Response) {
     if (!request.file) {
       return response.status(400).json({ error_message: 'No audio file provided' })
