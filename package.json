@@ -7,16 +7,17 @@
   "scripts": {
     "dev:server": "ts-node-dev --respawn --ignore-watch=node_modules --transpile-only src/server.ts",
     "typeorm": "typeorm-ts-node-commonjs",
-    "start": "node build/server.js",
+    "start": "node build/src/server.js",
     "build": "tsc && npx prisma generate",
     "postinstall": "npx prisma generate",
     "seed": "ts-node prisma/seed.ts",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f",
-    "docker:migrate": "docker compose exec api npx prisma migrate dev",
+    "docker:migrate": "docker compose exec api npx prisma migrate deploy",
+    "docker:generate": "docker compose exec api npx prisma generate",
     "docker:seed": "docker compose exec api npm run seed",
-    "docker:setup": "docker compose up -d && sleep 3 && docker compose exec api npx prisma migrate dev && docker compose exec api npm run seed",
+    "docker:setup": "docker compose up -d && sleep 3 && docker compose exec api npx prisma generate && docker compose exec api npx prisma migrate deploy && docker compose exec api npm run seed",
     "docker:restart": "docker compose restart"
   },
   "prisma": {
