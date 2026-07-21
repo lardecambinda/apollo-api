@@ -26,7 +26,13 @@ class WhisperClient {
       audioBuffer = await fs.promises.readFile(localPath)
       if (onProgress) onProgress(30)
     } else {
+      const headers: Record<string, string> = {}
+      if (audioUrl.includes('blob.vercel-storage.com') && process.env.BLOB_READ_WRITE_TOKEN) {
+        headers['authorization'] = `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`
+      }
+
       const audioResponse = await axios.get(audioUrl, {
+        headers,
         responseType: 'arraybuffer',
         onDownloadProgress: (progressEvent) => {
           if (progressEvent.total && onProgress) {
