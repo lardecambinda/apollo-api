@@ -25,10 +25,11 @@ class WhisperClient {
       }
     })
 
+    const contentType = (audioResponse.headers['content-type'] as string) || 'audio/wav'
     const form = new FormData()
     form.append('file', Buffer.from(audioResponse.data), {
       filename: 'audio.wav',
-      contentType: audioResponse.headers['content-type'] || 'audio/wav'
+      contentType
     })
     form.append('language', 'pt')
     form.append('model', 'small')
