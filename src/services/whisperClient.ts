@@ -1,4 +1,3 @@
-import fs from 'fs'
 import FormData from 'form-data'
 import axios from 'axios'
 
@@ -13,11 +12,24 @@ const WHISPER_SERVER_URL = process.env.WHISPER_SERVER_URL || 'http://localhost:8
 
 class WhisperClient {
   async transcribe(
-    audioPath: string,
+    audioUrl: string,
     onProgress?: (progress: number) => void
   ): Promise<{ text: string }> {
+    const audioResponse = await axios.get(audioUrl, {
+      responseType: 'arraybuffer',
+      onDownloadProgress: (progressEvent) => {
+        if (progressEvent.total && onProgress) {
+          const percent = Math.round((progressEvent.loaded * 30) / progressEvent.total)
+          onProgress(percent)
+        }
+      }
+    })
+
     const form = new FormData()
-    form.append('file', fs.createReadStream(audioPath))
+    form.append('file', Buffer.from(audioResponse.data), {
+      filename: 'audio.wav',
+      contentType: audioResponse.headers['content-type'] || 'audio/wav'
+    })
     form.append('language', 'pt')
     form.append('model', 'small')
 
@@ -30,15 +42,14 @@ class WhisperClient {
       maxBodyLength: Infinity,
       onUploadProgress: (progressEvent) => {
         if (progressEvent.total && onProgress) {
-          const percent = Math.round((progressEvent.loaded * 50) / progressEvent.total)
+          const percent = Math.round(30 + (progressEvent.loaded * 60) / progressEvent.total)
           onProgress(percent)
         }
       },
       onDownloadProgress: (progressEvent) => {
         if (progressEvent.total && onProgress) {
-          const uploadPercent = 50
-          const downloadPercent = Math.round((progressEvent.loaded * 50) / progressEvent.total)
-          onProgress(uploadPercent + downloadPercent)
+          const percent = Math.round(90 + (progressEvent.loaded * 10) / progressEvent.total)
+          onProgress(percent)
         }
       }
     })

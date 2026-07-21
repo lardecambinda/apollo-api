@@ -1,27 +1,13 @@
 import { Request, Response } from 'express'
-import { PrismaClient, TranscriptionStatus } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import { CustomRequest } from '../@types'
 import multer from 'multer'
-import path from 'path'
-import fs from 'fs'
+import { put, del } from '@vercel/blob'
 import { whisperClient, TranscriptionProgress } from '../services/whisperClient'
 
 const prisma = new PrismaClient()
 
-const AUDIO_DIR = path.join(process.cwd(), 'uploads', 'audio')
-if (!fs.existsSync(AUDIO_DIR)) {
-  fs.mkdirSync(AUDIO_DIR, { recursive: true })
-}
-
-export const upload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, AUDIO_DIR),
-    filename: (_req, file, cb) => {
-      const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`
-      cb(null, `${unique}${path.extname(file.originalname)}`)
-    }
-  })
-})
+export const upload = multer({ storage: multer.memoryStorage() })
 
 const sseClients = new Map<string, Set<Response>>()
 
@@ -57,9 +43,8 @@ async function processQueue() {
     })
     notifyProgress(id, { status: 'IN_PROGRESS', progress: 0 })
 
-    const audioPath = path.join(AUDIO_DIR, transcription.filename)
     const result = await whisperClient.transcribe(
-      audioPath,
+      transcription.audioUrl,
       (progress) => {
         prisma.transcriptions.update({
           where: { id },
@@ -132,12 +117,19 @@ export default {
       return response.status(400).json({ error_message: 'No audio file provided' })
     }
 
-    const { originalname, filename, size, mimetype } = request.file
+    const { originalname, size, mimetype } = request.file
     const userId = request.user?.id
 
     if (!userId) {
       return response.status(401).json({ error_message: 'User not authenticated' })
     }
+
+    const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${originalname}`
+
+    const blob = await put(filename, request.file.buffer, {
+      access: 'public',
+      contentType: mimetype,
+    })
 
     const transcription = await prisma.transcriptions.create({
       data: {
@@ -145,7 +137,7 @@ export default {
         originalName: originalname,
         fileSize: size,
         mimeType: mimetype,
-        audioUrl: `/uploads/audio/${filename}`,
+        audioUrl: blob.url,
         user_id: userId,
         status: 'PENDING'
       },
@@ -256,7 +248,7 @@ export default {
       return response.status(400).json({ error_message: 'Transcription not completed yet' })
     }
 
-    const baseName = path.parse(transcription.originalName).name
+    const baseName = transcription.originalName.replace(/\.[^/.]+$/, '')
     response.setHeader('Content-Type', 'text/plain; charset=utf-8')
     response.setHeader('Content-Disposition', `attachment; filename="${baseName}-transcricao.txt"`)
     return response.status(200).send(transcription.text)
@@ -307,9 +299,10 @@ export default {
       return response.status(400).json({ error_message: 'Cannot delete transcription in progress' })
     }
 
-    const audioPath = path.join(AUDIO_DIR, transcription.filename)
-    if (fs.existsSync(audioPath)) {
-      fs.unlinkSync(audioPath)
+    if (transcription.audioUrl) {
+      try {
+        await del(transcription.audioUrl)
+      } catch {}
     }
 
     await prisma.transcriptions.delete({ where: { id } })
