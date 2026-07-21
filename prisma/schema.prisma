@@ -18,8 +18,21 @@ model Users {
   posts           Posts[]
   categories      Categories[]
   transcriptions  Transcriptions[]
+  password_reset_tokens PasswordResetTokens[]
 
   @@map("users")
+}
+
+model PasswordResetTokens {
+  id         String   @id @default(uuid())
+  token_hash String
+  user_id    String
+  expires_at DateTime
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  users      Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
 }
 
 model Posts {
