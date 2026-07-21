@@ -33,6 +33,10 @@ app.use(cors({
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }))
 app.use(bodyParser.json({ limit: '10mb' }))
 
+app.get('/', (_req, res) => {
+  res.json({ status: 'ok', name: 'Apollo API', version: '1.0.0' })
+})
+
 app.use(logger)
 app.use(router)
 app.use(errorHandler)
