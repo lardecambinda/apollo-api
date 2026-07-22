@@ -1,6 +1,6 @@
 import { Response } from 'express'
 import { CustomRequest } from '../@types'
-import { put } from '@vercel/blob'
+import { supabase } from '../services/supabaseClient'
 import multer from 'multer'
 
 export const upload = multer({ storage: multer.memoryStorage() })
@@ -14,15 +14,31 @@ export default {
 
     const urls: string[] = []
 
-    for (const file of files) {
-      const filename = `posts/${Date.now()}-${file.originalname}`
-      const blob = await put(filename, file.buffer, {
-        access: 'public',
-        contentType: file.mimetype,
-      })
-      urls.push(blob.url)
-    }
+    try {
+      for (const file of files) {
+        const filename = `${Date.now()}-${file.originalname}`
+        const { error } = await supabase.storage
+          .from('posts')
+          .upload(filename, file.buffer, {
+            contentType: file.mimetype,
+            upsert: true
+          })
 
-    return response.status(200).json({ urls })
+        if (error) {
+          throw error
+        }
+
+        const { data } = supabase.storage
+          .from('posts')
+          .getPublicUrl(filename)
+
+        urls.push(data.publicUrl)
+      }
+
+      return response.status(200).json({ urls })
+    } catch (err: any) {
+      console.error('[UploadController error]', err)
+      return response.status(500).json({ error_message: err.message || 'Error uploading files' })
+    }
   }
 }
