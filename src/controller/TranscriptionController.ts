@@ -6,6 +6,7 @@ import { put, del } from '@vercel/blob'
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
 import path from 'path'
 import { whisperClient, TranscriptionProgress } from '../services/whisperClient'
+import { supabase } from '../services/supabaseClient'
 
 const prisma = new PrismaClient()
 
@@ -193,28 +194,43 @@ export default {
 
     const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${originalname}`
 
-    const blob = await put(filename, request.file.buffer, {
-      access: 'private',
-      contentType: mimetype,
-    })
+    try {
+      const { error } = await supabase.storage
+        .from('transcriptions')
+        .upload(filename, request.file.buffer, {
+          contentType: mimetype,
+          upsert: true
+        })
 
-    const transcription = await prisma.transcriptions.create({
-      data: {
-        filename,
-        originalName: originalname,
-        fileSize: size,
-        mimeType: mimetype,
-        audioUrl: blob.url,
-        user_id: userId,
-        status: 'PENDING'
-      },
-      select: transcriptionSelect
-    })
+      if (error) {
+        throw error
+      }
 
-    transcriptionQueue.push(transcription.id)
-    processQueue()
+      const { data } = supabase.storage
+        .from('transcriptions')
+        .getPublicUrl(filename)
 
-    return response.status(201).json(transcription)
+      const transcription = await prisma.transcriptions.create({
+        data: {
+          filename,
+          originalName: originalname,
+          fileSize: size,
+          mimeType: mimetype,
+          audioUrl: data.publicUrl,
+          user_id: userId,
+          status: 'PENDING'
+        },
+        select: transcriptionSelect
+      })
+
+      transcriptionQueue.push(transcription.id)
+      processQueue()
+
+      return response.status(201).json(transcription)
+    } catch (err: any) {
+      console.error('[uploadAudio error]', err)
+      return response.status(500).json({ error_message: err.message || 'Error uploading audio' })
+    }
   },
 
   async findAll(request: CustomRequest, response: Response) {
@@ -368,8 +384,15 @@ export default {
 
     if (transcription.audioUrl) {
       try {
-        await del(transcription.audioUrl)
-      } catch {}
+        if (transcription.audioUrl.includes('blob.vercel-storage.com')) {
+          await del(transcription.audioUrl)
+        } else if (transcription.audioUrl.includes('supabase.co')) {
+          const filename = transcription.audioUrl.substring(transcription.audioUrl.lastIndexOf('/') + 1)
+          await supabase.storage.from('transcriptions').remove([filename])
+        }
+      } catch (err) {
+        console.error('[destroy transcription file error]', err)
+      }
     }
 
     await prisma.transcriptions.delete({ where: { id } })
