@@ -1,30 +1,8 @@
 import { Request, Response } from 'express'
 import { PrismaClient } from '@prisma/client'
 import { CustomRequest } from '../@types'
-import { get } from '@vercel/blob'
-import { Readable } from 'stream'
 
 const prisma = new PrismaClient()
-
-interface PostWithFiles {
-  files: string[]
-  [key: string]: unknown
-}
-
-function transformPostFiles<T extends PostWithFiles>(post: T, request: Request): T {
-  if (!post || !post.files) return post
-  const apiBase = `${request.protocol}://${request.get('host')}`
-  const updatedFiles = post.files.map((fileUrl: string) => {
-    if (fileUrl && fileUrl.includes('blob.vercel-storage.com')) {
-      return `${apiBase}/post/file?url=${encodeURIComponent(fileUrl)}`
-    }
-    return fileUrl
-  })
-  return {
-    ...post,
-    files: updatedFiles
-  }
-}
 
 const postSelect = {
   id: true,
@@ -81,7 +59,7 @@ export default {
       }
     }
 
-    return response.status(201).json(transformPostFiles(post, request))
+    return response.status(201).json(post)
   },
 
   async findAll(request: Request, response: Response) {
@@ -108,14 +86,14 @@ export default {
     }
 
     const posts = await prisma.posts.findMany({ where, select: postSelect, orderBy: { createdAt: 'desc' } })
-    return response.status(200).json(posts.map(p => transformPostFiles(p, request)))
+    return response.status(200).json(posts)
   },
 
   async findOne(request: CustomRequest, response: Response) {
     const { id } = request.params
     const post = await prisma.posts.findUnique({ where: { id }, select: postSelect })
     if (!post) return response.status(404).json({ error_message: 'post not found' })
-    return response.status(200).json(transformPostFiles(post, request))
+    return response.status(200).json(post)
   },
 
   async update(request: CustomRequest, response: Response) {
@@ -149,7 +127,7 @@ export default {
       data: updateData
     })
 
-    return response.status(200).json(transformPostFiles(updated, request))
+    return response.status(200).json(updated)
   },
 
   async destroy(request: CustomRequest, response: Response) {
@@ -166,34 +144,5 @@ export default {
     await prisma.posts.delete({ where: { id } })
 
     return response.status(204).send()
-  },
-
-  async getFile(request: Request, response: Response) {
-    const fileUrl = request.query.url as string
-    if (!fileUrl) {
-      return response.status(400).json({ error_message: 'url parameter is required' })
-    }
-
-    try {
-      const result = await get(fileUrl, { access: 'private' })
-      if (!result || result.statusCode !== 200) {
-        return response.status(404).json({ error_message: 'File not found' })
-      }
-
-      response.setHeader('Content-Type', result.blob.contentType)
-      response.setHeader('Content-Length', result.blob.size)
-      if (result.blob.contentDisposition) {
-        response.setHeader('Content-Disposition', result.blob.contentDisposition)
-      }
-      if (result.blob.cacheControl) {
-        response.setHeader('Cache-Control', result.blob.cacheControl)
-      }
-
-      const nodeStream = Readable.fromWeb(result.stream as never)
-      nodeStream.pipe(response)
-    } catch (error: unknown) {
-      console.error('[getFile error]', error)
-      return response.status(500).json({ error_message: 'Error fetching file from store' })
-    }
   }
 }
