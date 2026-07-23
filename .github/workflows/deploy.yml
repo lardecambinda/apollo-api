@@ -68,12 +68,31 @@ jobs:
           
           echo "ℹ️ Quantidade de aprovações de terceiros: $APPROVED_COUNT"
           
-          if [ "$APPROVED_COUNT" -lt 1 ]; then
-            echo "❌ Erro: O PR #${PR_NUMBER} não possui nenhuma aprovação de outros colaboradores (excluindo o autor)."
-            exit 1
+          if [ "$APPROVED_COUNT" -ge 1 ]; then
+            echo "✅ Validação concluída! PR possui pelo menos 1 aprovação válida de terceiros."
+            exit 0
           fi
+
+          echo "⚠️ PR não possui aprovações de terceiros. Verificando se foi mesclado por um administrador (Bypass)..."
           
-          echo "✅ Validação concluída! PR possui pelo menos 1 aprovação válida de terceiros."
+          # Obter o usuário que realizou o merge
+          MERGED_BY=$(gh pr view "$PR_NUMBER" --json mergedBy --jq '.mergedBy.login // empty')
+          
+          if [ -n "$MERGED_BY" ]; then
+            echo "ℹ️ PR mesclado por: @${MERGED_BY}"
+            
+            # Verificar a permissão do usuário que fez o merge no repositório
+            USER_PERMISSION=$(gh api "/repos/${{ github.repository }}/collaborators/${MERGED_BY}/permission" --jq '.permission // empty')
+            echo "ℹ️ Permissão de @${MERGED_BY} no repositório: ${USER_PERMISSION}"
+            
+            if [ "$USER_PERMISSION" == "admin" ]; then
+              echo "✅ Validação concluída! PR foi mesclado por um administrador do repositório (Bypass autorizado)."
+              exit 0
+            fi
+          fi
+
+          echo "❌ Erro: O PR #${PR_NUMBER} não possui aprovações de outros colaboradores e não foi mesclado por um administrador."
+          exit 1
 
       - name: Deploy to Vercel
         env:
