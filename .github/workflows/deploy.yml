@@ -1,22 +1,88 @@
-name: Deploy to Render
+name: Deploy to Vercel (Backend Only)
 
 on:
   push:
     branches:
       - main
       - master
-  pull_request:
-    branches:
-      - main
-      - master
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
   deploy:
-    name: Deploy to Render
+    name: Verify and Deploy
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
 
     steps:
-      - name: Trigger Render Deploy
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Linter
+        run: npm run lint
+
+      - name: Run Typecheck
+        run: npm run typecheck
+
+      - name: Run Build
+        run: npm run build
+
+      - name: Verify PR Approval (At least 1 approval from non-author)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          # Obter informações do PR mesclado associado ao commit atual
+          PR_INFO=$(gh pr list --state merged --search "${{ github.sha }}" --limit 1 --json number,author)
+          
+          if [ -z "$PR_INFO" ] || [ "$PR_INFO" == "[]" ]; then
+            echo "❌ Erro: O deploy foi bloqueado porque este commit não veio de um Pull Request mesclado."
+            exit 1
+          fi
+          
+          PR_NUMBER=$(echo "$PR_INFO" | jq -r '.[0].number // empty')
+          PR_AUTHOR=$(echo "$PR_INFO" | jq -r '.[0].author.login // empty')
+          
+          if [ -z "$PR_NUMBER" ]; then
+            echo "❌ Erro: O número do PR não pôde ser identificado."
+            exit 1
+          fi
+          
+          echo "ℹ️ PR #${PR_NUMBER} identificado (Autor: @${PR_AUTHOR})"
+          
+          # Obter as revisões (reviews) do PR
+          REVIEWS=$(gh pr view "$PR_NUMBER" --json reviews)
+          
+          # Verificar aprovações válidas (status APPROVED e autor diferente do criador do PR)
+          APPROVED_COUNT=$(echo "$REVIEWS" | jq --arg author "$PR_AUTHOR" '[.reviews[] | select(.state == "APPROVED" and .author.login != $author)] | length')
+          
+          echo "ℹ️ Quantidade de aprovações de terceiros: $APPROVED_COUNT"
+          
+          if [ "$APPROVED_COUNT" -lt 1 ]; then
+            echo "❌ Erro: O PR #${PR_NUMBER} não possui nenhuma aprovação de outros colaboradores (excluindo o autor)."
+            exit 1
+          fi
+          
+          echo "✅ Validação concluída! PR possui pelo menos 1 aprovação válida de terceiros."
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID || 'team_SDXnXRBSf819OBMWITVd02id' }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID || 'prj_Spx9jwbAIG5nBwLCbqDjvKkC42pQ' }}
+        run: |
+          # Instalar CLI do Vercel e executar o deploy
+          npm install -g vercel
+          vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+          vercel build --prod --token=$VERCEL_TOKEN
+          vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN

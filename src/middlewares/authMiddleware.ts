@@ -1,5 +1,4 @@
 import { NextFunction, Response } from "express";
-import { PrismaClient, Users } from "@prisma/client";
 import { verify } from "jsonwebtoken";
 
 import { CustomRequest } from "../@types";
