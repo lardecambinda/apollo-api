@@ -40,7 +40,32 @@ export const CategoryController = {
   },
 
   async findAll(request: CustomRequest, response: Response) {
+    const user = request.user
+    if (!user) {
+      return response.status(401).json({ error_message: 'User not authenticated' })
+    }
+
+    let whereClause = {}
+    if (user.role === 'EDITOR') {
+      whereClause = {
+        OR: [
+          { status: 'APPROVED' },
+          { 
+            AND: [
+              { status: 'PENDING' },
+              { user_id: user.id }
+            ]
+          }
+        ]
+      }
+    } else {
+      whereClause = {
+        status: { in: ['APPROVED', 'PENDING'] }
+      }
+    }
+
     const categories = await prisma.categories.findMany({ 
+      where: whereClause,
       orderBy: { name: 'asc' },
       include: { users: { select: { id: true, user_name: true } } }
     })
