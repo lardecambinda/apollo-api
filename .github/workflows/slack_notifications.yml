@@ -1,0 +1,237 @@
+name: Slack Notifications
+
+on:
+  pull_request:
+    types: [opened, closed]
+    branches:
+      - main
+      - master
+
+jobs:
+  notify:
+    name: Notify Slack
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack Notification
+        run: |
+          # Se o PR foi aberto
+          if [ "${{ github.event.action }}" == "opened" ]; then
+            BRANCH_NAME=$(jq -rn --arg x "${{ github.event.pull_request.head.ref }}" '$x')
+            PR_TITLE=$(jq -rn --arg x "${{ github.event.pull_request.title }}" '$x')
+            PR_URL="${{ github.event.pull_request.html_url }}"
+            PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+            PR_BODY=$(jq -rn --arg x "${{ github.event.pull_request.body }}" '$x')
+
+            # Encontrar Task do Linear (Formato LAR-XXXX)
+            ISSUE_ID=$(echo "$BRANCH_NAME $PR_TITLE" | grep -oEi "lar-[0-9]+" | tr '[:lower:]' '[:upper:]' | head -n 1)
+            if [ -n "$ISSUE_ID" ]; then
+              LINEAR_LINK="https://linear.app/lar-fraterno-de-cambinda/issue/$ISSUE_ID"
+            else
+              ISSUE_ID="Sem issue"
+              LINEAR_LINK="https://linear.app/lar-fraterno-de-cambinda"
+            fi
+
+            # Tipo de Task
+            if [[ "$BRANCH_NAME" =~ ^feat/ || "$BRANCH_NAME" =~ ^feature/ || "$PR_TITLE" =~ ^feat ]]; then
+              TYPE="Feature 🚀"
+            elif [[ "$BRANCH_NAME" =~ ^fix/ || "$BRANCH_NAME" =~ ^bug/ || "$PR_TITLE" =~ ^fix ]]; then
+              TYPE="Bug 🐛"
+            else
+              TYPE="Melhoria/Ajuste 🛠️"
+            fi
+
+            # Urgência baseada em labels
+            PR_LABELS=$(jq -rn --arg x '${{ join(github.event.pull_request.labels.*.name, ", ") }}' '$x')
+            if [[ "$PR_LABELS" =~ [Uu]rgent || "$PR_LABELS" =~ [Aa]lta || "$PR_LABELS" =~ [Hh]igh ]]; then
+              URGENCY="Alta 🚨"
+            elif [[ "$PR_LABELS" =~ [Mm]edium || "$PR_LABELS" =~ [Mm]édia ]]; then
+              URGENCY="Média ⚠️"
+            else
+              URGENCY="Normal 🟢"
+            fi
+
+            # Extrair a descrição do PR
+            DESC=$(echo "$PR_BODY" | sed -n '/📋 Descrição do PR/,/🛠️/p' | grep -v '📋 Descrição do PR' | grep -v '🛠️' | sed '/^<!--/d' | tr '\n' ' ' | xargs)
+            if [ -z "$DESC" ]; then
+              DESC=$(echo "$PR_BODY" | head -c 300 | tr '\n' ' ' | xargs)
+            fi
+            if [ -z "$DESC" ] || [ "$DESC" == "null" ]; then
+              DESC="Nenhuma descrição fornecida no PR."
+            fi
+
+            # Limitar tamanho
+            if [ ${#DESC} -gt 350 ]; then
+              DESC="${DESC:0:347}..."
+            fi
+
+            # Montar payload do Slack
+            PAYLOAD=$(jq -n \
+              --arg repo "${{ github.repository }}" \
+              --arg pr_url "$PR_URL" \
+              --arg pr_title "$PR_TITLE" \
+              --arg type "$TYPE" \
+              --arg urgency "$URGENCY" \
+              --arg issue_id "$ISSUE_ID" \
+              --arg linear_link "$LINEAR_LINK" \
+              --arg author "$PR_AUTHOR" \
+              --arg desc "$DESC" \
+              '{
+                "blocks": [
+                  {
+                    "type": "header",
+                    "text": {
+                      "type": "plain_text",
+                      "text": "🆕 Novo Pull Request Aberto",
+                      "emoji": true
+                    }
+                  },
+                  {
+                    "type": "section",
+                    "fields": [
+                      {"type": "mrkdwn", "text": ("*Repositório:*\n<https://github.com/" + $repo + "|" + $repo + ">")},
+                      {"type": "mrkdwn", "text": "*Ambiente Alvo:*\n`Preview (Vercel)`"}
+                    ]
+                  },
+                  {
+                    "type": "section",
+                    "fields": [
+                      {"type": "mrkdwn", "text": ("*Tipo:*\n" + $type)},
+                      {"type": "mrkdwn", "text": ("*Urgência:*\n" + $urgency)}
+                    ]
+                  },
+                  {
+                    "type": "section",
+                    "fields": [
+                      {"type": "mrkdwn", "text": ("*Task no Linear:*\n<" + $linear_link + "|" + $issue_id + ">")},
+                      {"type": "mrkdwn", "text": ("*Autor:*\n@" + $author)}
+                    ]
+                  },
+                  {"type": "divider"},
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": ("*Descrição do que está subindo e impactos:*\n" + $desc)
+                    }
+                  },
+                  {
+                    "type": "actions",
+                    "elements": [
+                      {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "🔍 Revisar Pull Request", "emoji": true},
+                        "url": $pr_url,
+                        "style": "primary"
+                      }
+                    ]
+                  }
+                ]
+              }')
+
+            # Enviar para o canal de PR
+            curl -X POST -H "Content-type: application/json" --data "$PAYLOAD" "${{ secrets.SLACK_PR_WEBHOOK_URL }}"
+          fi
+
+          # Se o PR foi fechado e mesclado
+          if [ "${{ github.event.action }}" == "closed" ] && [ "${{ github.event.pull_request.merged }}" == "true" ]; then
+            BRANCH_NAME=$(jq -rn --arg x "${{ github.event.pull_request.head.ref }}" '$x')
+            PR_TITLE=$(jq -rn --arg x "${{ github.event.pull_request.title }}" '$x')
+            PR_URL="${{ github.event.pull_request.html_url }}"
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+            PR_BODY=$(jq -rn --arg x "${{ github.event.pull_request.body }}" '$x')
+
+            # Encontrar Task do Linear (Formato LAR-XXXX)
+            ISSUE_ID=$(echo "$BRANCH_NAME $PR_TITLE" | grep -oEi "lar-[0-9]+" | tr '[:lower:]' '[:upper:]' | head -n 1)
+            if [ -n "$ISSUE_ID" ]; then
+              LINEAR_LINK="https://linear.app/lar-fraterno-de-cambinda/issue/$ISSUE_ID"
+            else
+              ISSUE_ID="Sem issue"
+              LINEAR_LINK="https://linear.app/lar-fraterno-de-cambinda"
+            fi
+
+            # Extrair o que foi feito
+            DESC=$(echo "$PR_BODY" | sed -n '/🛠️ O que foi feito?/,/🧪/p' | grep -v '🛠️ O que foi feito?' | grep -v '🧪' | sed '/^<!--/d' | tr '\n' ' ' | xargs)
+            if [ -z "$DESC" ]; then
+              DESC=$(echo "$PR_BODY" | sed -n '/📋 Descrição do PR/,/🛠️/p' | grep -v '📋 Descrição do PR' | grep -v '🛠️' | sed '/^<!--/d' | tr '\n' ' ' | xargs)
+            fi
+            if [ -z "$DESC" ]; then
+              DESC=$(echo "$PR_BODY" | head -c 300 | tr '\n' ' ' | xargs)
+            fi
+            if [ -z "$DESC" ] || [ "$DESC" == "null" ]; then
+              DESC="Nenhum detalhe fornecido."
+            fi
+
+            # Limitar tamanho
+            if [ ${#DESC} -gt 350 ]; then
+              DESC="${DESC:0:347}..."
+            fi
+
+            # Definir URL de Produção
+            if [ "${{ github.repository }}" == "lardecambinda/apollo-api" ]; then
+              PROD_URL="https://apollo-api.vercel.app"
+              ENV_NAME="Production (Vercel)"
+            else
+              PROD_URL="https://lar-fraterno-front.vercel.app"
+              ENV_NAME="Production (Vercel)"
+            fi
+
+            # Montar payload do Slack
+            PAYLOAD=$(jq -n \
+              --arg repo "${{ github.repository }}" \
+              --arg pr_url "$PR_URL" \
+              --arg pr_title "$PR_TITLE" \
+              --arg pr_number "$PR_NUMBER" \
+              --arg env_name "$ENV_NAME" \
+              --arg prod_url "$PROD_URL" \
+              --arg issue_id "$ISSUE_ID" \
+              --arg linear_link "$LINEAR_LINK" \
+              --arg desc "$DESC" \
+              '{
+                "blocks": [
+                  {
+                    "type": "header",
+                    "text": {
+                      "type": "plain_text",
+                      "text": "🚀 Deploy Realizado com Sucesso!",
+                      "emoji": true
+                    }
+                  },
+                  {
+                    "type": "section",
+                    "fields": [
+                      {"type": "mrkdwn", "text": ("*Repositório:*\n<https://github.com/" + $repo + "|" + $repo + ">")},
+                      {"type": "mrkdwn", "text": ("*Ambiente:*\n`" + $env_name + "`")}
+                    ]
+                  },
+                  {
+                    "type": "section",
+                    "fields": [
+                      {"type": "mrkdwn", "text": ("*PR Mesclado:*\n<" + $pr_url + "|#" + $pr_number + " " + $pr_title + ">")},
+                      {"type": "mrkdwn", "text": ("*Task no Linear:*\n<" + $linear_link + "|" + $issue_id + ">")}
+                    ]
+                  },
+                  {"type": "divider"},
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": ("*O que foi implantado:*\n" + $desc)
+                    }
+                  },
+                  {
+                    "type": "actions",
+                    "elements": [
+                      {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "🌐 Acessar Produção", "emoji": true},
+                        "url": $prod_url,
+                        "style": "primary"
+                      }
+                    ]
+                  }
+                ]
+              }')
+
+            # Enviar para o canal de Deploy
+            curl -X POST -H "Content-type: application/json" --data "$PAYLOAD" "${{ secrets.SLACK_DEPLOY_WEBHOOK_URL }}"
+          fi
