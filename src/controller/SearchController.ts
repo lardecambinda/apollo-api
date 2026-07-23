@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import { PrismaClient } from '@prisma/client'
+import { getRequestUser } from '../middleware/auth'
 
 const prisma = new PrismaClient()
 
@@ -16,6 +17,13 @@ export default {
         { content: { contains: term, mode: 'insensitive' } },
         { tags: { has: term } },
       ]
+    }
+
+    const user = getRequestUser(request)
+    const isAdminOrEditor = user && (user.role === 'ADMIN' || user.role === 'EDITOR')
+
+    if (!isAdminOrEditor) {
+      where.status = 'PUBLISHED'
     }
 
     if (tag) where.tags = { has: tag as string }
