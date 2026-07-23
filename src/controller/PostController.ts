@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { PrismaClient } from '@prisma/client'
 import { CustomRequest } from '../@types'
+import jwt from 'jsonwebtoken'
 
 const prisma = new PrismaClient()
 
@@ -16,6 +17,25 @@ const postSelect = {
   createdAt: true,
   updatedAt: true,
   users: { select: { id: true, user_name: true } }
+}
+
+function getRequestUser(request: any): { id: string; role: string } | null {
+  let token: string | undefined
+  const authHeader = request.headers.authorization
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1]
+  } else if (typeof request.query.token === 'string' && request.query.token.length > 0) {
+    token = request.query.token
+  }
+
+  if (!token) return null
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string)
+    return decoded as { id: string; role: string }
+  } catch {
+    return null
+  }
 }
 
 export default {
@@ -85,6 +105,19 @@ export default {
       }
     }
 
+    // Regra de segurança/filtro no Backend:
+    // Por padrão, filtra apenas por PUBLISHED.
+    // Apenas ADMIN/EDITOR visualizando a área do admin (/admin no referer) podem ver outros status.
+    const referer = request.headers.referer as string | undefined
+    const isDashboardRequest = referer && referer.includes('/admin')
+
+    const user = getRequestUser(request)
+    const isAdminOrEditor = user && (user.role === 'ADMIN' || user.role === 'EDITOR')
+
+    if (!(isDashboardRequest && isAdminOrEditor)) {
+      where.status = 'PUBLISHED'
+    }
+
     const posts = await prisma.posts.findMany({ where, select: postSelect, orderBy: { createdAt: 'desc' } })
     return response.status(200).json(posts)
   },
@@ -93,6 +126,20 @@ export default {
     const { id } = request.params
     const post = await prisma.posts.findUnique({ where: { id }, select: postSelect })
     if (!post) return response.status(404).json({ error_message: 'post not found' })
+
+    // Se o post não estiver publicado e a requisição não vier de um admin/editor na área de admin, negar acesso
+    if (post.status !== 'PUBLISHED') {
+      const referer = request.headers.referer as string | undefined
+      const isDashboardRequest = referer && referer.includes('/admin')
+
+      const user = getRequestUser(request)
+      const isAdminOrEditor = user && (user.role === 'ADMIN' || user.role === 'EDITOR')
+
+      if (!(isDashboardRequest && isAdminOrEditor)) {
+        return response.status(404).json({ error_message: 'post not found' })
+      }
+    }
+
     return response.status(200).json(post)
   },
 
