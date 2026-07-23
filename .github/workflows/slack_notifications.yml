@@ -41,7 +41,7 @@ jobs:
             fi
 
             # Urgência baseada em labels
-            PR_LABELS=$(jq -rn --arg x '${{ join(github.event.pull_request.labels.*.name, ", ") }}' '$x')
+            PR_LABELS=$(jq -rn --arg x '${{ join(github.event.pull_request.labels.*.name, ', ') }}' '$x')
             if [[ "$PR_LABELS" =~ [Uu]rgent || "$PR_LABELS" =~ [Aa]lta || "$PR_LABELS" =~ [Hh]igh ]]; then
               URGENCY="Alta 🚨"
             elif [[ "$PR_LABELS" =~ [Mm]edium || "$PR_LABELS" =~ [Mm]édia ]]; then
