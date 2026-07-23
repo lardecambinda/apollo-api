@@ -20,7 +20,7 @@ export function logger(request: Request, response: Response, next: NextFunction)
   next()
 }
 
-export function errorHandler(error: Error, request: Request, response: Response, next: NextFunction) {
+export function errorHandler(error: Error, request: Request, response: Response, _next: NextFunction) {
   console.error(`\x1b[31m[ERROR] ${new Date().toISOString()} ${request.method} ${request.originalUrl}\x1b[0m`)
   console.error(error.stack)
   response.status(500).json({ error_message: 'Internal server error' })
