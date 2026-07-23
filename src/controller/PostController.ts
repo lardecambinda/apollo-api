@@ -107,14 +107,11 @@ export default {
 
     // Regra de segurança/filtro no Backend:
     // Por padrão, filtra apenas por PUBLISHED.
-    // Apenas ADMIN/EDITOR visualizando a área do admin (/admin no referer) podem ver outros status.
-    const referer = request.headers.referer as string | undefined
-    const isDashboardRequest = referer && referer.includes('/admin')
-
+    // Apenas ADMIN/EDITOR autenticados podem ver outros status.
     const user = getRequestUser(request)
     const isAdminOrEditor = user && (user.role === 'ADMIN' || user.role === 'EDITOR')
 
-    if (!(isDashboardRequest && isAdminOrEditor)) {
+    if (!isAdminOrEditor) {
       where.status = 'PUBLISHED'
     }
 
@@ -127,15 +124,12 @@ export default {
     const post = await prisma.posts.findUnique({ where: { id }, select: postSelect })
     if (!post) return response.status(404).json({ error_message: 'post not found' })
 
-    // Se o post não estiver publicado e a requisição não vier de um admin/editor na área de admin, negar acesso
+    // Se o post não estiver publicado e o usuário não for admin/editor, negar acesso
     if (post.status !== 'PUBLISHED') {
-      const referer = request.headers.referer as string | undefined
-      const isDashboardRequest = referer && referer.includes('/admin')
-
       const user = getRequestUser(request)
       const isAdminOrEditor = user && (user.role === 'ADMIN' || user.role === 'EDITOR')
 
-      if (!(isDashboardRequest && isAdminOrEditor)) {
+      if (!isAdminOrEditor) {
         return response.status(404).json({ error_message: 'post not found' })
       }
     }
